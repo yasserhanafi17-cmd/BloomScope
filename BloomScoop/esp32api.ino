@@ -1,8 +1,4 @@
-/* ESP32 GPS + NASA POWER (no PRECTOT) + Local Sensors (digital LDR + digital rain) -> ILI9341 TFT
-   - Light value logic reversed (active when digital HIGH)
-   - DHT temperature multiplied by 10, humidity multiplied by 3.7 (display & serial)
-   - Everything else kept as before (API bloom calculation unchanged)
-*/
+
 
 #include <TinyGPSPlus.h>
 #include <WiFi.h>
@@ -35,8 +31,8 @@ const int RAIN_PIN  = 21;   // Digital rain sensor output  -> connect the digita
 // ====== GPS ======
 TinyGPSPlus gps;
 #define GPS_SERIAL Serial2
-const int GPS_RX_PIN = 16; // GPS TX -> ESP32 RX2 (GPIO16)
-const int GPS_TX_PIN = 17; // GPS RX -> ESP32 TX2 (GPIO17)
+const int GPS_RX_PIN = 16; 
+const int GPS_TX_PIN = 17; 
 const uint32_t GPS_BAUD = 9600;
 
 // ====== TFT ======
@@ -46,7 +42,7 @@ const uint32_t GPS_BAUD = 9600;
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
 
 // update interval (ms)
-const unsigned long UPDATE_INTERVAL = 10000UL; // 10 seconds
+const unsigned long UPDATE_INTERVAL = 10000UL; 
 unsigned long lastUpdate = 0;
 
 // ====== utility ======
@@ -66,7 +62,7 @@ bool valueValid(double v) {
   return !isnan(v) && (v != -999.0);
 }
 
-// Bloom Likelihood calculation using API data ONLY (T2M, RH2M, WS2M)
+// Bloom Likelihood calculation using API data 
 // PRECTOT excluded by request.
 float computeBloomLikelihood(double t2m, double rh2m, double ws2m) {
   float tScore = 0.0;
@@ -237,11 +233,6 @@ void setup() {
   // Configure digital sensor pins - use pullups to avoid floating
   pinMode(LIGHT_PIN, INPUT_PULLUP);
   pinMode(RAIN_PIN, INPUT_PULLUP);
-  // NOTE: INPUT_PULLUP means the pin will normally read HIGH.
-  // Previously code assumed LOW = active; user asked to REVERSE light logic,
-  // so we treat HIGH as active = BRIGHT (i.e., reversed compared to earlier).
-  // If your module behaves differently, invert checks below.
-
   // TFT
   tft.begin();
   tft.setRotation(1);
@@ -276,7 +267,7 @@ void loop() {
   // feed GPS
   while (GPS_SERIAL.available() > 0) gps.encode(GPS_SERIAL.read());
 
-  // if no fix yet, show waiting (but keep looping)
+  // if no fix yet, show waiting 
   if (!gps.location.isValid()) {
     static unsigned long lastMsg = 0;
     if (millis() - lastMsg > 3000) {
@@ -304,10 +295,8 @@ void loop() {
   float localT_raw = dht.readTemperature();
   float localH_raw = dht.readHumidity();
 
-  // REVERSED light logic per your request:
-  // Treat HIGH as active -> BRIGHT (reversed compared to previous code)
+
   bool lightBright = (digitalRead(LIGHT_PIN) == HIGH);
-  // Rain remains: LOW -> WET (module commonly pulls low when wet)
   bool rainWet = (digitalRead(RAIN_PIN) == LOW);
 
   // compute adjusted values for logging/display
@@ -402,10 +391,10 @@ void loop() {
     return;
   }
 
-  // compute bloom likelihood using API values only (PRECTOT excluded)
+  // compute bloom likelihood using API values 
   float bloomScore = computeBloomLikelihood(t2m, rh, ws);
 
-  // Display everything (API + local sensors visible)
+  // Display everything 
   tftHeader();
   tftDrawLeft(lat, lon, usedDate, t2m, tmax, tmin, rh, ws);
   tftDrawRight(localT_raw, localH_raw, rainWet, lightBright); // multipliers applied inside
